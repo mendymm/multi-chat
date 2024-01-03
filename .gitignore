@@ -1,0 +1,6 @@
+/target
+tmp
+*.rdb
+credentials.json
+tokencache.json
+messages.sqlite3
