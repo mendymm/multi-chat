@@ -1,3 +1,4 @@
+use jsonpath_rust::JsonPathQuery;
 use reqwest::header::{self, HeaderMap};
 use scraper::{Html, Selector};
 use serde_json::{Map, Value};
@@ -10,6 +11,8 @@ pub struct YtCfg {
     /// each chat has a id that is separate from the video id
     /// for example: AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8
     pub chat_id: String,
+    /// sort of like a next page token
+    pub first_continuation: String,
 }
 
 pub async fn get_ytcfg(channel_name: &str) -> Option<YtCfg> {
@@ -26,7 +29,11 @@ pub async fn get_ytcfg(channel_name: &str) -> Option<YtCfg> {
     let res_text = res.text().await.ok()?;
 
     let document = Html::parse_document(&res_text);
+
+    let raw_ytinitaldata = get_raw_ytinitaldata(&document).unwrap();
     let raw_ytcfg = get_raw_ytcfg(&document).unwrap();
+
+    let continuation = get_continuation(serde_json::to_value(&raw_ytinitaldata).unwrap()).unwrap();
 
     let video_id = get_live_stream_id(&document).await.unwrap();
     let chat_id = raw_ytcfg
@@ -36,10 +43,42 @@ pub async fn get_ytcfg(channel_name: &str) -> Option<YtCfg> {
         .unwrap()
         .to_string();
 
-    Some(YtCfg { video_id, chat_id })
+    Some(YtCfg {
+        video_id,
+        chat_id,
+        first_continuation: continuation,
+    })
 }
 
-pub async fn get_live_stream_id(document: &Html) -> Option<String> {
+fn get_continuation(raw_ytinitaldata: Value) -> Option<String> {
+    let mut continuation_id: Option<String> = None;
+    let sub_menu_items=  raw_ytinitaldata.path("$.contents.twoColumnWatchNextResults.conversationBar.liveChatRenderer.header.liveChatHeaderRenderer.viewSelector.sortFilterSubMenuRenderer.subMenuItems[*]").unwrap();
+
+    for chat_continuation in sub_menu_items.as_array().unwrap() {
+        let chat_continuation = chat_continuation.as_object().unwrap();
+        let current_continuation_id = chat_continuation
+            .get("continuation")
+            .unwrap()
+            .as_object()
+            .unwrap()
+            .get("reloadContinuationData")
+            .unwrap()
+            .as_object()
+            .unwrap()
+            .get("continuation")
+            .unwrap()
+            .as_str()
+            .unwrap()
+            .to_string();
+        if chat_continuation.get("title").unwrap().as_str().unwrap() == "Live chat" {
+            continuation_id = Some(current_continuation_id);
+        }
+    }
+
+    continuation_id
+}
+
+async fn get_live_stream_id(document: &Html) -> Option<String> {
     let selector = Selector::parse("head > link[rel=canonical]").ok()?;
 
     let canonical_link = document.select(&selector).nth(0)?.attr("href")?;
@@ -65,12 +104,26 @@ fn get_raw_ytcfg(document: &Html) -> Option<Map<String, Value>> {
             return Some(raw_ytcfg);
         }
     }
-
     None
 }
 
-pub async fn get_chat_id(document: &Html) -> Option<String> {
-    unimplemented!()
+fn get_raw_ytinitaldata(document: &Html) -> Option<Map<String, Value>> {
+    let selector = Selector::parse("script").ok()?;
+    for script_elm in document.select(&selector) {
+        let elm_text = script_elm.html();
+        if elm_text.contains("var ytInitialData = ") {
+            let encoded_raw_ytcfg = elm_text
+                .split("var ytInitialData = ")
+                .nth(1)
+                .unwrap()
+                .split(";</script>")
+                .nth(0)
+                .unwrap();
+            let raw_ytcfg = serde_json::from_str::<Map<String, Value>>(encoded_raw_ytcfg).unwrap();
+            return Some(raw_ytcfg);
+        }
+    }
+    None
 }
 
 fn get_headers() -> HeaderMap {

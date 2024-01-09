@@ -1,11 +1,10 @@
-use misc::{get_live_stream_id, get_ytcfg};
+use misc::get_ytcfg;
 
 mod misc;
 
 #[tokio::main]
 async fn main() {
     let creator_name = "RyanHallYall";
-
 
     let ytcfg = get_ytcfg(creator_name).await.unwrap();
     dbg!(ytcfg);
