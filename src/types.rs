@@ -1,7 +1,7 @@
 use crate::dgg::DggChatMsg;
 use askama::Template;
 use chrono::{DateTime, Local, Utc};
-use colored::{Color::Green, ColoredString, Colorize};
+use colored::{ColoredString, Colorize};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize, Clone, Template)]
