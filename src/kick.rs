@@ -1,13 +1,13 @@
 // kick chat websocket connection
 #![allow(dead_code)]
-use crate::types::ChatMsg;
+use crate::types::ChatMsg_DEP;
 use chrono::DateTime;
 use log::debug;
 use std::sync::mpsc::Sender;
 use tungstenite::{connect, Message};
 use url::Url;
 
-pub fn main(tx: Option<Sender<ChatMsg>>) {
+pub fn main(tx: Option<Sender<ChatMsg_DEP>>) {
     let ws_url = Url::parse("wss://ws-us2.pusher.com/app/eb1d5f283081a78b932c?protocol=7&client=js&version=7.6.0&flash=false").unwrap();
 
     let (mut socket, response) = connect(ws_url).expect("Can't connect");
@@ -62,9 +62,9 @@ pub fn main(tx: Option<Sender<ChatMsg>>) {
                     let author = data.sender.username;
                     let msg_text = data.content;
                     let dt = DateTime::parse_from_rfc3339(&data.created_at).unwrap();
-                    let chat_msg = ChatMsg {
+                    let chat_msg = ChatMsg_DEP {
                         author,
-                        location: crate::types::ChatLocation::Kick,
+                        location: crate::types::ChatLocation_DEP::Kick,
                         msg_text,
                         published_at: dt.into(),
                         raw_msg_text: raw_msg_text.to_string(),

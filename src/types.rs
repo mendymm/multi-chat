@@ -3,32 +3,35 @@ use chrono::{DateTime, Local, Utc};
 use colored::*;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Deserialize, Serialize)]
-pub struct ChatMsg {
-    pub location: ChatLocation,
+use crate::dgg::DggChatMsg;
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct ChatMsg_DEP {
+    pub location: ChatLocation_DEP,
     pub msg_text: String,
     pub author: String,
     pub published_at: chrono::DateTime<Utc>,
     pub raw_msg_text: String,
 }
 
-#[derive(Template)] // this will generate the code...
-#[template(path = "chat_msg.html.jinja")] // using the template in this path, relative
-                                          // to the `templates` dir in the crate root
-struct HelloTemplate<'a> {
-    // the name of the struct can be anything
+#[derive(Template)]
+#[template(
+    ext = "html",
+    source = r#"<span class="">{{fmt_time}} {{location}} {{author}}</span><span>  {{msg}}</span>"#
+)]
+struct HelloTemplate_DEP<'a> {
     color: &'a str,
     msg: &'a str,
     location: &'a str,
     fmt_time: &'a str,
-    author: &'a str, // the field name should match the variable name
-                     // in your template
+    author: &'a str,
+    // class_name: &'a str,
 }
 
-impl ChatMsg {
+impl ChatMsg_DEP {
     pub fn to_html(&self) -> String {
         let local_time: DateTime<Local> = DateTime::from(self.published_at);
-        let html_msg = HelloTemplate {
+        let html_msg = HelloTemplate_DEP {
             author: &self.author,
             msg: &self.msg_text,
             color: self.location.get_css_color(),
@@ -71,33 +74,103 @@ impl ChatMsg {
         compressed_data
     }
 }
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub enum ChatLocation_DEP {
+    Dgg,
+    YouTube,
+    Kick,
+}
+
+impl ChatLocation_DEP {
+    pub fn name(&self) -> &'static str {
+        match self {
+            ChatLocation_DEP::Dgg => "dgg    ",
+            ChatLocation_DEP::YouTube => "youtube",
+            ChatLocation_DEP::Kick => "kick   ",
+        }
+    }
+    fn get_color(&self) -> Color {
+        match self {
+            ChatLocation_DEP::Dgg => Color::Blue,
+            ChatLocation_DEP::YouTube => Color::Red,
+            ChatLocation_DEP::Kick => Color::Green,
+        }
+    }
+    fn get_css_color(&self) -> &'static str {
+        match self {
+            ChatLocation_DEP::Dgg => "blue",
+            ChatLocation_DEP::YouTube => "red",
+            ChatLocation_DEP::Kick => "green",
+        }
+    }
+}
+
+#[derive(Template)]
+#[template(
+    ext = "html",
+    source = r#"<div class="{{class}}"><span>{{fmt_time}} {{location}} {{author}}</span><span>  {{msg}}</span></div>"#
+)]
+struct MsgTemplate<'a> {
+    msg: &'a str,
+    location: &'a str,
+    fmt_time: &'a str,
+    author: &'a str,
+    class: &'a str,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub enum ChatLocation {
     Dgg,
     YouTube,
     Kick,
 }
 
-impl ChatLocation {
-    pub fn name(&self) -> &'static str {
-        match self {
-            ChatLocation::Dgg => "dgg    ",
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct ChatMsg {
+    /// the chat location where the message originated from
+    pub location: ChatLocation,
+    /// when the message was sent
+    pub timestamp: DateTime<Utc>,
+    /// the text of the message
+    pub msg_text: String,
+    /// the display name of the author
+    pub author: String,
+    /// raw full message as it was received
+    pub raw_full_msg: String,
+}
+
+impl ChatMsg {
+    pub fn from_dgg_msg(dgg_msg: DggChatMsg, raw_msg_text: String) -> Self {
+        ChatMsg {
+            location: ChatLocation::Dgg,
+            raw_full_msg: raw_msg_text,
+            timestamp: dgg_msg.timestamp,
+            msg_text: dgg_msg.data,
+            author: dgg_msg.nick,
+        }
+    }
+
+    pub fn to_html(&self) -> String {
+        let class = match self.location {
+            ChatLocation::Dgg => "dgg",
             ChatLocation::YouTube => "youtube",
-            ChatLocation::Kick => "kick   ",
+            ChatLocation::Kick => "kick",
+        };
+        let msg = self.msg_text.as_str();
+        let location = class;
+        let local_time: DateTime<Local> = DateTime::from(self.timestamp);
+
+        let fmt_time = local_time.format("%H:%M").to_string();
+        let author = self.author.as_str();
+
+        MsgTemplate {
+            author,
+            class,
+            fmt_time: fmt_time.as_str(),
+            location,
+            msg,
         }
-    }
-    fn get_color(&self) -> Color {
-        match self {
-            ChatLocation::Dgg => Color::Blue,
-            ChatLocation::YouTube => Color::Red,
-            ChatLocation::Kick => Color::Green,
-        }
-    }
-    fn get_css_color(&self) -> &'static str {
-        match self {
-            ChatLocation::Dgg => "blue",
-            ChatLocation::YouTube => "red",
-            ChatLocation::Kick => "green",
-        }
+        .render()
+        .unwrap()
     }
 }

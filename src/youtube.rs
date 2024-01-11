@@ -6,9 +6,9 @@ use yup_oauth2::{InstalledFlowAuthenticator, InstalledFlowReturnMethod};
 const MAX_RESULTS: u32 = 500;
 
 type Hub = YouTube<hyper_rustls::HttpsConnector<hyper::client::HttpConnector>>;
-use crate::types::{ChatLocation, ChatMsg};
+use crate::types::{ChatLocation_DEP, ChatMsg_DEP};
 
-pub async fn main(tx: Option<Sender<ChatMsg>>) {
+pub async fn main(tx: Option<Sender<ChatMsg_DEP>>) {
     let hub = get_hub().await;
 
     let channel_id = get_channel_id(&hub, "destiny").await;
@@ -57,10 +57,10 @@ pub async fn main(tx: Option<Sender<ChatMsg>>) {
                         let author = msg.author_details.unwrap().display_name.unwrap();
                         let published_at = snippet.published_at.unwrap();
 
-                        let chat_msg = ChatMsg {
+                        let chat_msg = ChatMsg_DEP {
                             author,
                             msg_text: msg_text.clone().to_string(),
-                            location: ChatLocation::YouTube,
+                            location: ChatLocation_DEP::YouTube,
                             published_at,
                             raw_msg_text: serde_json::to_string(&msg_clone).unwrap(),
                         };

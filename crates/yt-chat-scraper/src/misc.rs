@@ -51,9 +51,10 @@ pub async fn get_ytcfg(channel_name: &str) -> Option<YtCfg> {
 }
 
 fn get_continuation(raw_ytinitaldata: Value) -> Option<String> {
+
     let mut continuation_id: Option<String> = None;
     let sub_menu_items=  raw_ytinitaldata.path("$.contents.twoColumnWatchNextResults.conversationBar.liveChatRenderer.header.liveChatHeaderRenderer.viewSelector.sortFilterSubMenuRenderer.subMenuItems[*]").unwrap();
-
+    
     for chat_continuation in sub_menu_items.as_array().unwrap() {
         let chat_continuation = chat_continuation.as_object().unwrap();
         let current_continuation_id = chat_continuation

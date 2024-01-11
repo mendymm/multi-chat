@@ -4,7 +4,7 @@ mod misc;
 
 #[tokio::main]
 async fn main() {
-    let creator_name = "RyanHallYall";
+    let creator_name = "ludwig";
 
     let ytcfg = get_ytcfg(creator_name).await.unwrap();
     dbg!(ytcfg);
