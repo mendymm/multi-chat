@@ -1,8 +1,8 @@
+use crate::dgg::DggChatMsg;
 use askama::Template;
 use chrono::{DateTime, Local, Utc};
+use colored::{Color::Green, ColoredString, Colorize};
 use serde::{Deserialize, Serialize};
-
-use crate::dgg::DggChatMsg;
 
 #[derive(Debug, Deserialize, Serialize, Clone, Template)]
 #[template(
@@ -85,12 +85,24 @@ impl ChatMsg {
     pub fn cli_format(&self) -> String {
         let local_time: DateTime<Local> = DateTime::from(self.timestamp);
 
+        let msg_text = match self.location {
+            ChatLocation::Dgg => {
+                if self.msg_text.starts_with('>') {
+                    self.msg_text.green()
+                } else {
+                    ColoredString::from(self.msg_text.as_str())
+                }
+            }
+            ChatLocation::YouTube => ColoredString::from(self.msg_text.as_str()),
+            ChatLocation::Kick => ColoredString::from(self.msg_text.as_str()),
+        };
+
         format!(
-            "[{} {} {}] - {}",
+            "[{} {} {}] {}",
             local_time.format("%H:%M"),
             self.location.name(),
             self.author,
-            self.msg_text
+            msg_text
         )
     }
 }
