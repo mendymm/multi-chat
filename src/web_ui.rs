@@ -1,7 +1,9 @@
 use futures_util::SinkExt;
 use log::{info, warn};
+use std::time::Duration;
 use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::broadcast::Receiver;
+use tokio::time::sleep;
 use tokio_tungstenite::accept_async;
 use tokio_tungstenite::tungstenite::Message;
 
@@ -27,6 +29,14 @@ async fn accept_connection(stream: TcpStream, mut rx: Receiver<ChatMsg>) {
     let mut ws_stream = accept_async(stream).await.expect("Failed to accept");
     info!("New WebSocket connection: {}", addr);
 
+    // for some fucking reason this is needed
+    loop {
+        if rx.is_empty() {
+            sleep(Duration::from_secs(1)).await;
+        } else {
+            break;
+        }
+    }
     loop {
         match rx.recv().await {
             Ok(msg) => {

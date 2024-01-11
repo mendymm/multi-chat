@@ -26,7 +26,7 @@ pub async fn main(tx: tSender<ChatMsg>) {
             continue;
         }
 
-        let dgg_chat_msg: DggChatMsg = serde_json::from_str(&raw_msg.m_content).unwrap();
+        let dgg_chat_msg: DggChatMsg = serde_json::from_str(raw_msg.m_content).unwrap();
         let chat_msg = ChatMsg::from_dgg_msg(dgg_chat_msg, raw_msg_text);
 
         tx.send(chat_msg).unwrap();
@@ -62,7 +62,7 @@ pub struct RawDggMsg<'a> {
 }
 impl<'a> From<&'a str> for RawDggMsg<'a> {
     fn from(value: &'a str) -> Self {
-        let (m_type, m_content) = value.split_once(" ").unwrap();
+        let (m_type, m_content) = value.split_once(' ').unwrap();
         Self { m_type, m_content }
     }
 }

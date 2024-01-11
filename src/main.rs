@@ -1,14 +1,16 @@
 use clap::{Parser, Subcommand};
 use log::info;
 use tokio::sync::broadcast;
-mod dgg;
-mod kick;
-mod printer;
-mod types;
-mod ws_server;
-mod youtube;
+
+pub mod dgg;
+pub mod kick;
+pub mod printer;
+pub mod types;
+pub mod utils;
+pub mod web_ui;
+pub mod youtube;
+
 use types::ChatMsg;
-mod web_ui;
 
 #[derive(Debug, Parser)]
 struct Args {
@@ -43,23 +45,36 @@ async fn main() {
 
     let mut join_handles = vec![];
 
-    if args.dgg {
+    if args.dgg || args.all {
         info!("Staring dgg thread");
         let dgg_tx = tx.clone();
         let join_handel = tokio::spawn(dgg::main(dgg_tx));
         join_handles.push(join_handel);
     }
+    if args.kick || args.all {
+        info!("Staring kick thread");
+        let kick_tx = tx.clone();
+        let join_handel = tokio::spawn(kick::main(kick_tx));
+        join_handles.push(join_handel);
+    }
 
-    if args.web {
+    if args.youtube || args.all {
+        info!("Staring youtube thread");
+        let youtube_tx = tx.clone();
+        let join_handel = tokio::spawn(youtube::main(youtube_tx));
+        join_handles.push(join_handel);
+    }
+
+    if args.web || args.all {
         info!("Staring web ui thread");
-        let web_rx = tx.subscribe();
+        let web_rx = rx.resubscribe();
         let join_handel = tokio::spawn(web_ui::main(web_rx));
         join_handles.push(join_handel);
     }
 
-    if args.print {
+    if args.print || args.all {
         info!("Staring printer thread");
-        let printer_rx = tx.subscribe();
+        let printer_rx = rx.resubscribe();
         let join_handel = tokio::spawn(printer::main(printer_rx));
         join_handles.push(join_handel);
     }
