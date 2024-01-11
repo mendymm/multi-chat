@@ -82,6 +82,8 @@ impl ChatMsg {
         .unwrap()
     }
 
+    /* cli_format() returns a UTF8 string of the message.
+     * for DGG chat if the message starts with a '>' it will make the message green */
     pub fn cli_format(&self) -> String {
         let local_time: DateTime<Local> = DateTime::from(self.timestamp);
 
