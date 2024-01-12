@@ -38,6 +38,8 @@ enum Command {
 
 #[tokio::main]
 async fn main() {
+    let youtube_channel_name = "destiny";
+
     let rust_log = std::env::var("RUST_LOG").unwrap_or("".to_string());
     println!("`RUST_LOG` env var is `{}`", rust_log);
     env_logger::init();
@@ -63,7 +65,7 @@ async fn main() {
     if args.youtube || args.all {
         info!("Staring youtube thread");
         let youtube_tx = tx.clone();
-        let join_handel = tokio::spawn(youtube::scraper::main(youtube_tx));
+        let join_handel = tokio::spawn(youtube::scraper::main(youtube_tx, youtube_channel_name));
         join_handles.push(join_handel);
     }
 

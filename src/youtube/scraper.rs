@@ -10,10 +10,8 @@ use std::time::Duration;
 use tokio::sync::broadcast::Sender;
 use tokio::time::sleep;
 
-pub async fn main(tx: Sender<ChatMsg>) {
-    let creator_name = "GTID";
-
-    let ytcfg = get_ytcfg(creator_name).await.unwrap();
+pub async fn main(tx: Sender<ChatMsg>, youtube_channel_name: &str) {
+    let ytcfg = get_ytcfg(youtube_channel_name).await.unwrap();
 
     let url = format!(
         "https://www.youtube.com/youtubei/v1/live_chat/get_live_chat?key={}&prettyPrint=false",
@@ -142,10 +140,6 @@ fn parse_yt_msg(tx: &Sender<ChatMsg>, raw_message: String) -> String {
         .as_str()
         .unwrap()
         .to_string()
-}
-
-struct YtChatResponse {
-    next_continuation: String,
 }
 
 #[derive(Serialize)]
