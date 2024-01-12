@@ -35,7 +35,7 @@ pub async fn get_ytcfg(channel_name: &str) -> Option<YtCfg> {
 
     let continuation = get_continuation(serde_json::to_value(&raw_ytinitaldata).unwrap()).unwrap();
 
-    let video_id = get_live_stream_id(&document).await.unwrap();
+    let video_id = get_live_stream_id(&document).unwrap();
     let chat_id = raw_ytcfg
         .get("INNERTUBE_API_KEY")
         .unwrap()
@@ -79,7 +79,7 @@ fn get_continuation(raw_ytinitaldata: Value) -> Option<String> {
     continuation_id
 }
 
-async fn get_live_stream_id(document: &Html) -> Option<String> {
+fn get_live_stream_id(document: &Html) -> Option<String> {
     let selector = Selector::parse("head > link[rel=canonical]").ok()?;
 
     let canonical_link = document.select(&selector).nth(0)?.attr("href")?;
